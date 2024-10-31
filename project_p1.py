@@ -282,3 +282,38 @@ def get_dependency_parse(input: str):
     return output
 
 
+# Function: get_dep_categories(parsed_input)
+# parsed_input: A CONLL-formatted string.
+# Returns: Five integers, corresponding to the number of nominal subjects (nsubj),
+#          direct objects (obj), indirect objects (iobj), nominal modifiers (nmod),
+#          and adjectival modifiers (amod) in the input, respectively.
+#
+# This function counts the number of grammatical relations belonging to each of five
+# universal dependency relation categories specified for the provided input.
+def get_dep_categories(parsed_input):
+    num_nsubj = 0
+    num_obj = 0
+    num_iobj = 0
+    num_nmod = 0
+    num_amod = 0
+
+    lines = parsed_input.strip().split('\n')
+    for line in lines:
+        if line: 
+            parsed_line = line.split('\t')
+            if len(parsed_line) >= 4:
+                parse_relation = parsed_line[3]
+                if parse_relation.startswith('nsubj'):
+                    num_nsubj += 1
+                elif parse_relation == 'obj':
+                    num_obj += 1
+                elif parse_relation == 'iobj':
+                    num_iobj += 1
+                elif parse_relation.startswith('nmod'):
+                    num_nmod += 1
+                elif parse_relation == 'amod':
+                    num_amod += 1
+
+    return num_nsubj, num_obj, num_iobj, num_nmod, num_amod
+
+
