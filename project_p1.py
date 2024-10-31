@@ -217,3 +217,68 @@ def test_model_w2v(model, word2vec, test_documents, test_labels):
 
     return precision, recall, f1, accuracy
 
+# Function: compute_ttr(user_input)
+# user_input: A string of arbitrary length
+# Returns: A floating point value
+#
+# This function computes the type-token ratio for tokens in the input string.
+# Type-token ratio is computed as: num_types / num_tokens, where num_types is
+# the number of unique tokens.
+def compute_ttr(user_input):
+    ttr = 0.0
+
+    t = get_tokens(user_input)
+    num_types = len(set(t))
+    num_tokens = len(t)
+
+    if num_tokens > 0:
+        ttr = num_types / num_tokens
+    else:
+        ttr = 0
+
+    return ttr
+
+
+# Function: tokens_per_sentence(user_input)
+# user_input: A string of arbitrary length
+# Returns: A floating point value
+#
+# This function computes the average number of tokens per sentence
+def tokens_per_sentence(user_input):
+    tps = 0.0
+    sentences = nltk.tokenize.sent_tokenize(user_input)
+    total_tokens = 0
+    for sentence in sentences:
+        tokens = get_tokens(sentence)
+        total_tokens += len(tokens)
+
+    num_sentences = len(sentences)
+    if num_sentences > 0:
+        tps = total_tokens / num_sentences
+    else:
+        tps = 0
+
+    return tps
+
+
+# Function: get_dependency_parse(input)
+# This function accepts a raw string input and returns a CoNLL-formatted output
+# string with each line indicating a word, its POS tag, the index of its head
+# word, and its relation to the head word.
+# Parameters:
+# input - A string containing a single text input (e.g., a sentence).
+# Returns:
+# output - A string containing one row per word, with each row containing the
+#          word, its POS tag, the index of its head word, and its relation to
+#          the head word.
+def get_dependency_parse(input: str):
+    output = ""
+    dep_parser = CoreNLPDependencyParser(url="http://localhost:9000")
+
+    parses = dep_parser.raw_parse(input)
+    parse = next(parses)
+    output = parse.to_conll(4)
+
+    return output
+
+
