@@ -317,3 +317,77 @@ def get_dep_categories(parsed_input):
     return num_nsubj, num_obj, num_iobj, num_nmod, num_amod
 
 
+# Function: custom_feature_1(user_input)
+# user_input: A string of arbitrary length
+# Returns: An output specific to the feature type implemented.
+#
+# This function implements a custom stylistic feature extractor.
+def custom_feature_1(user_input):
+    sia = SentimentIntensityAnalyzer()
+    sentiment_scores = sia.polarity_scores(user_input)
+    
+    intensity_score = abs(sentiment_scores['compound']) 
+    
+    # Here I analyze punctuation for urgency
+    urgency_score = user_input.count('!') + user_input.count('?')
+    
+    # This part of the feature is to analyze modal verbs for urgency
+    modal_verbs = ['must', 'should', 'need', 'ought', 'shall', 'will',  
+    'can', 'could', 'may', 'might', 'have to', 'required', 'mandatory',
+    'dare', 'used to', 'had better', 'ought to']
+    words = get_tokens(user_input.lower())  
+    modal_count = 0
+    for word in words:
+        if word in modal_verbs:
+            modal_count += 1
+
+    urgency_score += modal_count  
+    
+    # Here I analyze emotive language intensity
+    emotive_words = ['love', 'hate', 'excited', 'afraid', 'surprised', 'angry',
+        'joyful', 'sad', 'happy', 'disgusted', 'furious', 'delighted', 'terrified',
+        'anxious', 'nervous', 'worried', 'elated', 'heartbroken', 'depressed', 'content',
+        'pleased', 'upset', 'bitter', 'frightened', 'eager', 'hopeful', 'mournful']
+    emotive_count = 0
+    for word in words:
+        if word in emotive_words:
+            emotive_count += 1
+
+    intensity_score += 0.1 * emotive_count
+    
+    # Detecting capitalization
+    cap_match = re.findall(r'\b[A-Z]{2,}\b', user_input) 
+    caps_count = len(cap_match)
+    if caps_count > 0:
+        intensity_score += 0.05 * caps_count
+    
+    # Adverb detection
+    pos_tags = nltk.pos_tag(words)
+    adverb_count = 0
+    for word, tag in pos_tags:
+        if tag.startswith('RB'):
+            adverb_count += 1
+
+    intensity_score += 0.05 * adverb_count
+
+    return {'intensity_score': intensity_score, 'urgency_score': urgency_score}
+
+
+# Function: custom_feature_2(user_input)
+# user_input: A string of arbitrary length
+# Returns: An output specific to the feature type implemented.
+#
+# This function implements a custom stylistic feature extractor.
+def custom_feature_2(user_input):
+    sia = SentimentIntensityAnalyzer()
+    sentiment_scores = sia.polarity_scores(user_input)
+
+    if sentiment_scores['compound'] >= 0.05:
+        tone = "Positive"
+    elif sentiment_scores['compound'] <= -0.05:
+        tone = "Negative"
+    else:
+        tone = "Neutral"
+
+    return tone
+
