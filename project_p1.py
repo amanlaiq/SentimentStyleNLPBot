@@ -391,3 +391,60 @@ def custom_feature_2(user_input):
 
     return tone
 
+
+if __name__ == "__main__":
+
+    # Load the dataset
+    documents, labels = load_as_list("dataset.csv")
+
+
+    vectorizer, tfidf_train = vectorize_train(documents)
+
+    nb_tfidf, logistic_tfidf, svm_tfidf, mlp_tfidf = instantiate_models() 
+    svm_tfidf = train_model_tfidf(svm_tfidf, tfidf_train, labels)
+
+
+    print("*********** Beginning chatbot execution *************************\n")
+
+    # Display a welcome message to the user, and accept a user response of arbitrary length
+    user_input = input("Welcome to the CS 421 chatbot!  What is your name?\n")
+
+    # Extract the user's name
+    name = extract_user_info(user_input)
+
+    # Query the user for a response
+    user_input = input(f"Thanks {name}!  What do you want to talk about today?\n")
+
+    # Predict user's sentiment
+    tfidf_test = vectorizer.transform([user_input])  
+    # w2v_test = string2vec(word2vec, user_input)  
+
+    label = None
+    label = svm_tfidf.predict(tfidf_test.reshape(1, -1))
+
+    if label == 0:
+        print("Hmm, it seems like you're feeling a bit down.")
+    elif label == 1:
+        print("It sounds like you're in a positive mood!")
+    else:
+        print("Hmm, that's weird.  My classifier predicted a value of: {0}".format(label))
+
+    user_input = input("I'd also like to do a quick stylistic analysis. What's on your mind today?\n")
+    ttr = compute_ttr(user_input)
+    tps = tokens_per_sentence(user_input)
+    dep_parse = get_dependency_parse(user_input)
+    num_nsubj, num_obj, num_iobj, num_nmod, num_amod = get_dep_categories(dep_parse)
+    custom_1 = custom_feature_1(user_input)
+    custom_2 = custom_feature_2(user_input)
+
+    # Generate a stylistic analysis of the user's input
+    print("Thanks!  Here's what I discovered about your writing style.")
+    print("Type-Token Ratio: {0}".format(ttr))
+    print("Average Tokens Per Sentence: {0}".format(tps))
+    print("Dependencies:\n{0}".format(dep_parse)) # Uncomment to view the full dependency parse.
+    print("# Nominal Subjects: {0}\n# Direct Objects: {1}\n# Indirect Objects: {2}"
+          "\n# Nominal Modifiers: {3}\n# Adjectival Modifiers: {4}".format(num_nsubj, num_obj,
+                                                                           num_iobj, num_nmod, num_amod))
+    print("Custom Feature #1: {0}".format(custom_1))
+    print("Custom Feature #2: {0}".format(custom_2))
+    # ----------------------------------------------------------------------------
