@@ -1,8 +1,91 @@
-SentimentStyleNLPBot: Advanced Chatbot for Sentiment and Style Analysis
+# SentimentStyleNLPBot: Advanced Chatbot for Sentiment and Style Analysis
 
-This repository hosts the development of a specialized chatbot designed as part of the CS 421 course project at the University of Illinois at Chicago. The chatbot is engineered to analyze and interpret the sentiment and style of natural language input, providing valuable insights into user communications. The project is structured into three main deliverables:
+## Project Overview
 
-Language Representation: Utilizing advanced techniques like TF-IDF and Word2Vec to convert text into a format suitable for machine learning models.
-Text Classification: Implementing and comparing various statistical machine learning models to accurately predict the sentiment of user input as positive or negative.
-Integration and Testing: Combining the models and representations into a fully functional chatbot that can be interacted with in real-time.
-This project showcases the application of theoretical knowledge in practical, real-world systems and aims to push the boundaries of what is possible with current machine learning technologies in natural language processing.
+This chatbot is the culmination of a Natural Language Processing (NLP) project for CS 421, designed to provide sophisticated text analysis through a comprehensive approach to language understanding.
+
+### Code Implementation
+- `ChatBot.py`: Main chatbot implementation
+- `process_transcripts.py`: Transcript processing utilities
+
+## Project Phases
+
+### Part 1: Sentiment Classification
+- Developed a machine learning model to predict sentiment (positive/negative)
+- Implemented text representation techniques
+- Utilized classification algorithms
+
+### Part 2: Stylistic Analysis
+- Extracted meaningful text features using NLTK
+- Analyzed linguistic nuances and micro-expressions
+- Implemented custom feature extractors with focus on:
+  - Grammatical dependency relations
+  - Text complexity metrics
+  - Linguistic structural information
+
+### Part 3: Dialogue Management
+- Implemented a finite-state dialogue architecture
+- Integrated sentiment and stylistic analysis
+- Created interactive chatbot interface
+
+## Technical Components
+
+### Key Features
+- Sentiment Classification
+- Stylistic Feature Extraction
+- Interactive Dialogue Management
+
+### Technologies and Libraries
+- Python 3.6+
+- scikit-learn
+- pandas
+- numpy
+- NLTK (Natural Language Toolkit)
+- Stanford CoreNLP
+
+## Stylistic Analysis Techniques
+
+### Feature Extraction Methods
+1. Type-Token Ratio (TTR)
+2. Average Tokens per Sentence
+3. Grammatical Dependency Parsing
+4. Custom Feature Extractors
+   - Linguistic structure analysis
+   - Text complexity measurement
+
+## Dialogue States
+- Welcome State
+- Name Collection State
+- Sentiment Analysis State
+- Stylistic Analysis State
+
+## Evaluation Methodology
+
+### Coherence Analysis
+- TAACO (Tool for Automatic Analysis of Cohesion)
+- Metrics for dialogue quality assessment
+
+### Usability Evaluation
+- User interaction studies
+- Survey based on DARPA Communicator project metrics
+- Assessments of:
+  1. Interaction clarity
+  2. System predictability
+  3. Dialogue naturalness
+
+## Future Improvements
+- Advanced NLP techniques
+- Enhanced dialogue management
+- More sophisticated feature extraction
+- Expanded linguistic analysis capabilities
+
+## Course Details
+- **Course**: CS 421: Natural Language Processing
+- **Institution**: University of Illinois at Chicago
+- **Project Timeline**: 
+  - Part 1: Initial Sentiment Model
+  - Part 2: Stylistic Analysis
+  - Part 3: Dialogue Integration and Evaluation
+
+## Contributing
+Interested in contributing? Feel free to fork and submit pull requests!
