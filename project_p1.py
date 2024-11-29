@@ -1,28 +1,40 @@
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import GaussianNB
 import pandas as pd
 import numpy as np
 import pickle as pkl
-import nltk
-nltk.download('vader_lexicon')
-import time
-import csv
-import re
-import string
-
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
+import string
+import re
+import csv
+import nltk
+from time import localtime, strftime
 from nltk.parse.corenlp import CoreNLPDependencyParser
-from nltk.tag import pos_tag
 from nltk.sentiment import SentimentIntensityAnalyzer
+
+#-----------------------------------FILE WRITER-------------------------------------------------------
+f = open("{0}.txt".format(strftime("%Y-%m-%d_%H-%M-%S", localtime())), "w")
+
+
+#-----------------------------------CODE FROM PART 1--------------------------------------------------
 
 EMBEDDING_FILE = "w2v.pkl"
 
+
+# Function: load_w2v
+# filepath: path of w2v.pkl
+# Returns: A dictionary containing words as keys and pre-trained word2vec representations as numpy arrays of shape (300,)
 def load_w2v(filepath):
     with open(filepath, 'rb') as fin:
         return pkl.load(fin)
+
+
+# Function: load_as_list(fname)
+# fname: A string indicating a filename
+# Returns: Two lists: one a list of document strings, and the other a list of integers
 
 def load_as_list(fname):
     df = pd.read_csv(fname)
@@ -30,6 +42,10 @@ def load_as_list(fname):
     labels = df['label'].values.tolist()
     return documents, labels
 
+
+# Function: extract_user_info(user_input)
+# user_input: A string of arbitrary length
+# Returns: name as string
 def extract_user_info(user_input):
     name = ""
     name_match = re.search(r"(^|\s)([A-Z][A-Za-z-&'\.]*(\s|$)){2,4}", user_input)
@@ -40,7 +56,7 @@ def extract_user_info(user_input):
 
 # Function to convert a given string into a list of tokens
 # Args:
-#   inp_str: input string 
+#   inp_str: input string
 # Returns: token list, dtype: list of strings
 def get_tokens(inp_str):
     # Initialize NLTK tokenizer
@@ -56,7 +72,8 @@ def get_tokens(inp_str):
 # training_documents: A list of strings
 # Returns: An initialized TfidfVectorizer model, and a document-term matrix, dtype: scipy.sparse.csr.csr_matrix
 def vectorize_train(training_documents):
-    vectorizer = None
+    # Initialize the TfidfVectorizer model and document-term matrix
+    vectorizer = TfidfVectorizer()
     tfidf_train = None
     vectorizer = TfidfVectorizer(tokenizer=get_tokens, lowercase=True)
     tfidf_train = vectorizer.fit_transform(training_documents)
@@ -74,7 +91,7 @@ def vectorize_train(training_documents):
 # pretrained model, it should return a zero vector; otherwise, it returns the
 # corresponding word vector from the word2vec dictionary.
 def w2v(word2vec, token):
-    word_vector = np.zeros(300,)
+    word_vector = np.zeros(300, )
 
     if token in word2vec:
         word_vector = word2vec[token]
@@ -91,7 +108,8 @@ def w2v(word2vec, token):
 # each token in the string, and averages across those embeddings to produce a
 # single, averaged embedding for the entire input.
 def string2vec(word2vec, user_input):
-    embedding = np.zeros(300,)
+    embedding = np.zeros(300, )
+
     tokens_list = []
     extracted_tokens = get_tokens(user_input)
 
@@ -127,7 +145,7 @@ def instantiate_models():
 # training_labels: A list of integers (all 0 or 1)
 # Returns: A trained version of the input model
 #
-# This function trains an input machine learning model using TFIDF
+# This function trains an input machine learning model using averaged Word2Vec
 # embeddings for the training documents.
 def train_model_tfidf(model, tfidf_train, training_labels):
     tfidf_t = tfidf_train.toarray()
@@ -153,7 +171,7 @@ def train_model_w2v(model, word2vec, training_documents, training_labels):
     i_arr = np.array(i)
 
     model.fit(i_arr, training_labels)
-
+    
     return model
 
 
@@ -261,6 +279,7 @@ def tokens_per_sentence(user_input):
     return tps
 
 
+
 # Function: get_dependency_parse(input)
 # This function accepts a raw string input and returns a CoNLL-formatted output
 # string with each line indicating a word, its POS tag, the index of its head
@@ -273,11 +292,13 @@ def tokens_per_sentence(user_input):
 #          the head word.
 def get_dependency_parse(input: str):
     output = ""
+
     dep_parser = CoreNLPDependencyParser(url="http://localhost:9000")
 
     parses = dep_parser.raw_parse(input)
     parse = next(parses)
     output = parse.to_conll(4)
+
 
     return output
 
@@ -315,6 +336,7 @@ def get_dep_categories(parsed_input):
                     num_amod += 1
 
     return num_nsubj, num_obj, num_iobj, num_nmod, num_amod
+
 
 
 # Function: custom_feature_1(user_input)
@@ -391,45 +413,82 @@ def custom_feature_2(user_input):
 
     return tone
 
+# Function: welcome_state()
+# This function does not take any input
+# Returns: A string indicating the next state
+#
+# This function implements the chatbot's welcome states.  Feel free to customize
+# the welcome message!  In this state, the chatbot greets the user.
+def welcome_state():
+    # Display a welcome message to the user
+    user_input = print("Welcome to the CS 421 chatbot!  ")
+    f.write("CHATBOT:\nWelcome to the CS 421 chatbot!  ")
 
-if __name__ == "__main__":
-
-    # Load the dataset
-    documents, labels = load_as_list("dataset.csv")
+    return "get_user_info"
 
 
-    vectorizer, tfidf_train = vectorize_train(documents)
-
-    nb_tfidf, logistic_tfidf, svm_tfidf, mlp_tfidf = instantiate_models() 
-    svm_tfidf = train_model_tfidf(svm_tfidf, tfidf_train, labels)
-
-
-    print("*********** Beginning chatbot execution *************************\n")
-
-    # Display a welcome message to the user, and accept a user response of arbitrary length
-    user_input = input("Welcome to the CS 421 chatbot!  What is your name?\n")
+# Function: get_info_state()
+# This function does not take any input
+# Returns: A string indicating the next state and a string indicating the
+#          user's name
+#
+# This function implements a state that requests the user's name and then processes
+# the user's response to extract that information.  Feel free to customize this!
+def get_info_state():
+    # Request the user's name, and accept a user response of
+    # arbitrary length.  Feel free to customize this!
+    user_input = input("What is your name?\n")
+    f.write("What is your name?\n")
+    f.write("\nUSER:\n{0}\n".format(user_input))
 
     # Extract the user's name
     name = extract_user_info(user_input)
 
-    # Query the user for a response
-    user_input = input(f"Thanks {name}!  What do you want to talk about today?\n")
+    return "sentiment_analysis", name
 
-    # Predict user's sentiment
-    tfidf_test = vectorizer.transform([user_input])  
-    # w2v_test = string2vec(word2vec, user_input)  
+
+# Function: sentiment_analysis_state(name, model, vectorizer, word2vec)
+# name: A string indicating the user's name
+# model: The trained classification model used for predicting sentiment
+# vectorizer: OPTIONAL; The trained vectorizer, if using TFIDF (leave empty otherwise)
+# word2vec: OPTIONAL; The pretrained Word2Vec model, if using Word2Vec (leave empty otherwise)
+# Returns: A string indicating the next state
+
+def sentiment_analysis_state(name, model, vectorizer=None, word2vec=None):
+    # Check the user's sentiment
+    user_input = input("Thanks {0}!  What do you want to talk about today?\n".format(name))
+    f.write("\nCHATBOT:\nThanks {0}!  What do you want to talk about today?\n".format(name))
+    f.write("\nUSER:\n{0}\n".format(user_input))
+
+    # Predict the user's sentiment
+    test = vectorizer.transform([user_input])  
 
     label = None
-    label = svm_tfidf.predict(tfidf_test.reshape(1, -1))
+    label = model.predict(test.reshape(1, -1))
 
     if label == 0:
         print("Hmm, it seems like you're feeling a bit down.")
+        f.write("\nCHATBOT:\nHmm, it seems like you're feeling a bit down.\n")
     elif label == 1:
         print("It sounds like you're in a positive mood!")
+        f.write("\nCHATBOT:\nIt sounds like you're in a positive mood!\n")
     else:
         print("Hmm, that's weird.  My classifier predicted a value of: {0}".format(label))
+        f.write("\nCHATBOT:\nHmm, that's weird.  My classifier predicted a value of: {0}\n".format(label))
 
+    return "stylistic_analysis"
+
+
+# Function: stylistic_analysis_state()
+# This function does not take any input
+# Returns: A string indicating the next state
+#
+# This function implements a state that asks the user what's on their mind, and
+# then analyzes their response.  Feel free to customize this!
+def stylistic_analysis_state():
     user_input = input("I'd also like to do a quick stylistic analysis. What's on your mind today?\n")
+    f.write("\nCHATBOT:\nI'd also like to do a quick stylistic analysis. What's on your mind today?\n")
+    f.write("\nUSER:\n{0}\n".format(user_input))
     ttr = compute_ttr(user_input)
     tps = tokens_per_sentence(user_input)
     dep_parse = get_dependency_parse(user_input)
@@ -441,10 +500,105 @@ if __name__ == "__main__":
     print("Thanks!  Here's what I discovered about your writing style.")
     print("Type-Token Ratio: {0}".format(ttr))
     print("Average Tokens Per Sentence: {0}".format(tps))
-    print("Dependencies:\n{0}".format(dep_parse)) # Uncomment to view the full dependency parse.
+    # print("Dependencies:\n{0}".format(dep_parse)) # Uncomment to view the full dependency parse.
     print("# Nominal Subjects: {0}\n# Direct Objects: {1}\n# Indirect Objects: {2}"
           "\n# Nominal Modifiers: {3}\n# Adjectival Modifiers: {4}".format(num_nsubj, num_obj,
                                                                            num_iobj, num_nmod, num_amod))
     print("Custom Feature #1: {0}".format(custom_1))
     print("Custom Feature #2: {0}".format(custom_2))
-    # ----------------------------------------------------------------------------
+
+    f.write("\nCHATBOT:\nThanks!  Here's what I discovered about your writing style.\n")
+    f.write("Type-Token Ratio: {0}\n".format(ttr))
+    f.write("Average Tokens Per Sentence: {0}\n".format(tps))
+    # f.write("Dependencies:\n{0}\n".format(dep_parse)) 
+    f.write("# Nominal Subjects: {0}\n# Direct Objects: {1}\n# Indirect Objects: {2}"
+          "\n# Nominal Modifiers: {3}\n# Adjectival Modifiers: {4}\n".format(num_nsubj, num_obj,
+                                                                           num_iobj, num_nmod, num_amod))
+    f.write("Custom Feature #1: {0}\n".format(custom_1))
+    f.write("Custom Feature #2: {0}\n".format(custom_2))
+
+    return "check_next_action"
+
+
+# Function: check_next_state()
+# This function does not take any input
+# Returns: A string indicating the next state
+#
+# This function implements a state that checks to see what the user would like
+# to do next.  The user can indicate that they would like to quit, redo the sentiment
+# analysis, or redo the stylistic analysis.  Feel free to customize this!
+def check_next_state():
+    next_state = ""
+
+    user_input = input("What would you like to do next?  You can quit, redo the "
+                       "sentiment analysis, or redo the stylistic analysis.\n")
+    f.write("\nCHATBOT:\nWhat would you like to do next?  You can quit, redo the "
+                       "sentiment analysis, or redo the stylistic analysis.\n")
+    f.write("\nUSER:\n{0}\n".format(user_input))
+
+    match = False # Only becomes true once a match is found
+    while not match:
+        quit_match = re.search(r"\bquit\b", user_input) 
+        sentiment_match = re.search(r"\bsentiment\b", user_input)
+        analysis_match = re.search(r"\bstyl", user_input)
+
+        if quit_match is not None:
+            next_state = "quit"
+            match = True
+        elif sentiment_match is not None:
+            next_state = "sentiment_analysis"
+            match = True
+        elif analysis_match is not None:
+            next_state = "stylistic_analysis"
+            match = True
+        else:
+            user_input = input("Sorry, I didn't understand that.  Would you like "
+                               "to quit, redo the sentiment analysis, or redo the stylistic analysis?\n")
+            f.write("\nCHATBOT:\nSorry, I didn't understand that.  Would you like "
+                               "to quit, redo the sentiment analysis, or redo the stylistic analysis?\n")
+            f.write("\nUSER:\n{0}\n".format(user_input))
+
+    return next_state
+
+
+# Function: run_chatbot(model, vectorizer=None):
+# model: A trained classification model
+# Returns: This function does not return any values
+def run_chatbot(model, vectorizer=None, word2vec=None):
+    next_state = "welcome"
+    first_sentiment_analysis = True  
+
+    while next_state != "quit":
+        if next_state == "welcome":
+            next_state = welcome_state()  
+        elif next_state == "get_user_info":
+            next_state, name = get_info_state() 
+        elif next_state == "sentiment_analysis":
+            next_state = sentiment_analysis_state(name, model, vectorizer=vectorizer, word2vec=word2vec)
+            if first_sentiment_analysis:
+                next_state = "stylistic_analysis" 
+                first_sentiment_analysis = False  
+        elif next_state == "stylistic_analysis":
+            next_state = stylistic_analysis_state()  
+        elif next_state == "check_next_action":
+            next_state = check_next_state()  
+
+
+if __name__ == "__main__":
+
+    documents, labels = load_as_list("dataset.csv")
+
+    vectorizer, tfidf_train = vectorize_train(documents) 
+
+    nb_tfidf, logistic_tfidf, svm_tfidf, mlp_tfidf = instantiate_models() 
+    svm_tfidf = train_model_tfidf(svm_tfidf, tfidf_train, labels)
+
+    # next_state = welcome_state()
+    # next_state, name = get_info_state() 
+    # next_state = sentiment_analysis_state(name, svm_tfidf, vectorizer=vectorizer) 
+    # next_state = stylistic_analysis_state() 
+    # next_state = check_next_state() 
+
+    run_chatbot(svm_tfidf, vectorizer=vectorizer)
+    f.close()
+    
